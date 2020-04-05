@@ -3,6 +3,7 @@ package com.boshko.MyFinance.service;
 import com.boshko.MyFinance.entities.Product;
 import com.boshko.MyFinance.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.*;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -17,39 +18,27 @@ public class ProductServiceImpl implements ProductService {
         this.productRepository = productRepository;
     }
 
-    private Map<Long, Product> identityMap = new HashMap<>();
-
     @Override
+    @Cacheable("products")
     public List<Product> findAll() {
-        List<Product> products = new ArrayList<>();
-        products = productRepository.findAll();
-        for (Product o : products
-        ) {
-            identityMap.put(o.getId(), o);
-        }
-
-        return products;
+        return productRepository.findAll();
     }
 
     @Override
+    @Cacheable("products")
     public Product findById(Long id) {
-        if (identityMap.containsKey(id)) {
-            return identityMap.get(id);
-        }
-        Product product = productRepository.findById(id).get();
-        identityMap.put(product.getId(), product);
-        return product;
+        return productRepository.findById(id).get();
     }
 
     @Override
+    @CacheEvict("products")
     public void deleteById(Long id) {
         productRepository.deleteById(id);
-        identityMap.remove(id);
     }
 
     @Override
+    @CachePut(value = "products", key = "#product.id")
     public void save(Product product) throws IOException {
-        identityMap.put(product.getId(), product);
         productRepository.save(product);
     }
 }
